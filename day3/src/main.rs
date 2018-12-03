@@ -1,4 +1,4 @@
-use day3::Claim;
+use day3::*;
 use failure::Error;
 
 fn main() -> Result<(), Error> {
@@ -7,20 +7,9 @@ fn main() -> Result<(), Error> {
         .map(|line| line.parse())
         .collect::<Result<Vec<_>, Error>>()?;
 
-    let grid_width = claims
-        .iter()
-        .map(|claim| claim.x + claim.width)
-        .max()
-        .unwrap_or(0);
+    let multiply_claimed = count_squares_with_multiple_claims(&claims);
 
-    let grid_height = claims
-        .iter()
-        .map(|claim| claim.y + claim.height)
-        .max()
-        .unwrap_or(0);
-
-    println!("{} claims loaded", claims.len());
-    println!("Grid measures {} x {} inches.", grid_width, grid_height);
+    println!("{} squares fall within two or more claims.", multiply_claimed);
 
     Ok(())
 }
