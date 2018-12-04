@@ -9,7 +9,16 @@ fn main() -> Result<(), Error> {
 
     let multiply_claimed = count_squares_with_multiple_claims(&claims);
 
-    println!("{} squares fall within two or more claims.", multiply_claimed);
+    println!(
+        "{} squares fall within two or more claims.",
+        multiply_claimed
+    );
+
+    for claim in &claims {
+        if !claims.iter().filter(|other| *other != claim).any(|other| other.overlaps(claim)) {
+            println!("Claim number {} does not overlap with any of the others.", claim.id);
+        }
+    }
 
     Ok(())
 }

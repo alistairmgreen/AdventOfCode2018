@@ -20,6 +20,28 @@ pub struct Claim {
     pub height: usize,
 }
 
+impl Claim {
+    pub fn overlaps(&self, other: &Claim) -> bool {
+        let self_right = self.x + self.width - 1;
+        let other_right = other.x + other.width - 1;
+        let self_bottom = self.y + self.height - 1;
+        let other_bottom = other.y + other.height - 1;
+
+        (
+            (self.x >= other.x && self.x <= other_right)
+            || (self_right >= other.x && self_right <= other_right)
+            || (other.x >= self.x && other.x <= self_right)
+            || (other_right >= self.x && other_right <= self_right)
+        )
+            && (
+                (self.y >= other.y && self.y <= other_bottom)
+                || (self_bottom >= other.y && self_bottom <= other_bottom)
+                || (other.y >= self.y && other.y <= self_bottom)
+                || (other_bottom >= self.y && other_bottom <= self_bottom)
+        )
+    }
+}
+
 impl std::str::FromStr for Claim {
     type Err = failure::Error;
 
@@ -156,5 +178,14 @@ mod tests {
     #[test]
     fn example_for_part_1() {
         assert_eq!(4, count_squares_with_multiple_claims(&EXAMPLE_CLAIMS));
+    }
+
+    #[test]
+    fn example_claim_overlaps() {
+        assert!(EXAMPLE_CLAIMS[0].overlaps(&EXAMPLE_CLAIMS[1]));
+        assert!(EXAMPLE_CLAIMS[1].overlaps(&EXAMPLE_CLAIMS[0]));
+
+        assert!(!EXAMPLE_CLAIMS[0].overlaps(&EXAMPLE_CLAIMS[2]));
+        assert!(!EXAMPLE_CLAIMS[1].overlaps(&EXAMPLE_CLAIMS[2]));
     }
 }
