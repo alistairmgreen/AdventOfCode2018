@@ -2,11 +2,18 @@ use day4::*;
 
 fn main() -> Result<(), EventParseError> {
     let events = read_events()?;
-    let count = events.len();
 
-    println!("{} events loaded.", count);
-    println!("The first event is:\n{:#?}", events[0]);
-    println!("The last event is:\n{:#?}", events[count - 1]);
+    let sleep_times = count_sleep_times(&events)?;
+
+    if let Some((id, sleep_count)) = sleep_times.iter().max_by_key(|(_, sleep)| sleep.iter().sum::<usize>()) {
+        println!("Guard #{} spends the most time asleep.", id);
+
+        if let Some((minute, _)) = sleep_count.iter().enumerate().max_by_key(|(_, c)| *c) {
+            println!("He is most often asleep at {} minutes past midnight.", minute);
+
+            println!("The answer to Part 1 is therefore {}", id * minute);
+        }
+    }
 
     Ok(())
 }
