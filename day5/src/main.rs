@@ -11,23 +11,7 @@ fn units_react(left: char, right: char) -> bool {
         && left.to_ascii_lowercase() == right.to_ascii_lowercase()
 }
 
-fn react(original_polymer: &str) -> String {
-    let mut polymer = original_polymer.to_string();
-
-    loop {
-        let reacted = reaction_step(&polymer);
-
-        if reacted == polymer {
-            break;
-        }
-
-        polymer.clone_from(&reacted);
-    }
-
-    polymer
-}
-
-fn reaction_step(polymer: &str) -> String {
+fn react(polymer: &str) -> String {
     let mut reacted = String::new();
 
     for original_character in polymer.chars() {
