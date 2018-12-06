@@ -10,11 +10,21 @@ type Point = (i32, i32);
 fn main() {
     let largest = find_largest_area(&input::PUZZLE_INPUT);
     println!("The largest area is {}.", largest);
+
+    let part2 = part2_region_size(&input::PUZZLE_INPUT, 10_000);
+    println!(
+        "Part 2: The region with total distance < 10,000 has area {}.",
+        part2
+    );
 }
 
 /// Calculates the distance between two points in "Manhattan" geometry.
 fn manhattan(from: Point, to: Point) -> i32 {
     i32::abs(to.0 - from.0) + i32::abs(to.1 - from.1)
+}
+
+fn total_distance(from: Point, points: &[Point]) -> i32 {
+    points.iter().map(|&point| manhattan(from, point)).sum()
 }
 
 /// Finds the closest point to the given coordinates, if there is a unique answer.
@@ -83,7 +93,7 @@ fn find_largest_area(points: &[Point]) -> i32 {
     // Look at the rows and columns *outside* the area bounded by the points.
     // Any point closest to these must have an infinite area associated with it.
 
-    for x in left-1..=right+1 {
+    for x in left - 1..=right + 1 {
         if let Some(nearest) = find_closest((x, top - 1), points) {
             infinite_areas.insert(nearest);
         }
@@ -116,6 +126,22 @@ fn find_largest_area(points: &[Point]) -> i32 {
     areas.values().cloned().max().unwrap_or(0)
 }
 
+fn part2_region_size(points: &[Point], max_distance: i32) -> usize {
+    let ((left, top), (right, bottom)) = bounds(points);
+
+    let mut region_size = 0;
+
+    for x in (left - max_distance)..=(right + max_distance) {
+        for y in (top - max_distance)..=(bottom + max_distance) {
+            if total_distance((x, y), points) < max_distance {
+                region_size += 1;
+            }
+        }
+    }
+
+    region_size
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -131,5 +157,15 @@ mod tests {
     #[test]
     fn largest_area_part_1_example() {
         assert_eq!(17, find_largest_area(&EXAMPLE_INPUT));
+    }
+
+    #[test]
+    fn total_distance_example() {
+        assert_eq!(30, total_distance((4, 3), &EXAMPLE_INPUT));
+    }
+
+    #[test]
+    fn part2_example() {
+        assert_eq!(16, part2_region_size(&EXAMPLE_INPUT, 32));
     }
 }
