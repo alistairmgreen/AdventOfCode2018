@@ -23,10 +23,6 @@ fn manhattan(from: Point, to: Point) -> i32 {
     i32::abs(to.0 - from.0) + i32::abs(to.1 - from.1)
 }
 
-fn total_distance(from: Point, points: &[Point]) -> i32 {
-    points.iter().map(|&point| manhattan(from, point)).sum()
-}
-
 /// Finds the closest point to the given coordinates, if there is a unique answer.
 /// Returns None if there is a tie.
 fn find_closest(position: Point, other_points: &[Point]) -> Option<Point> {
@@ -133,7 +129,16 @@ fn part2_region_size(points: &[Point], max_distance: i32) -> usize {
 
     for x in (left - max_distance)..=(right + max_distance) {
         for y in (top - max_distance)..=(bottom + max_distance) {
-            if total_distance((x, y), points) < max_distance {
+            let mut total = 0;
+            let position = (x, y);
+            for point in points {
+                total += manhattan(position, *point);
+                if total >= max_distance {
+                    break;
+                }
+            }
+
+            if total < max_distance {
                 region_size += 1;
             }
         }
@@ -157,11 +162,6 @@ mod tests {
     #[test]
     fn largest_area_part_1_example() {
         assert_eq!(17, find_largest_area(&EXAMPLE_INPUT));
-    }
-
-    #[test]
-    fn total_distance_example() {
-        assert_eq!(30, total_distance((4, 3), &EXAMPLE_INPUT));
     }
 
     #[test]
