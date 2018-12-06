@@ -48,7 +48,7 @@ fn optimize(polymer: &str) -> (char, String) {
 
     for letter in alphabet() {
         let mut filtered = polymer.to_string();
-        filtered.retain(|c| c != letter && c != letter.to_ascii_uppercase());
+        filtered.retain(|c| c.to_ascii_lowercase() != letter);
         let optimized = react(&filtered);
         solutions.insert(letter, optimized);
     }
