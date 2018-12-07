@@ -29,26 +29,29 @@ fn find_order(mut steps: HashSet<char>, mut prerequisites: HashMap<char, HashSet
     let mut sequence = String::with_capacity(steps.len());
 
     while !steps.is_empty() {
-        let mut candidates: Vec<char> = steps
-            .iter()
-            .cloned()
-            .filter(|step| match prerequisites.get(step) {
-                None => true,
-                Some(required) => !required.iter().any(|r| steps.contains(r)),
-            })
-            .collect();
-
-        assert!(!candidates.is_empty());
-
-        candidates.sort();
-
-        let step = candidates[0];
+        let step = next_step(&steps, &prerequisites);
         sequence.push(step);
         steps.remove(&step);
         prerequisites.remove(&step);
     }
 
     sequence
+}
+
+fn next_step(steps: &HashSet<char>, prerequisites: &HashMap<char, HashSet<char>>) -> char {
+    let mut candidates: Vec<char> = steps
+        .iter()
+        .cloned()
+        .filter(|step| match prerequisites.get(step) {
+            None => true,
+            Some(required) => !required.iter().any(|r| steps.contains(r)),
+        })
+        .collect();
+
+    assert!(!candidates.is_empty());
+
+    candidates.sort();
+    candidates[0]
 }
 
 #[cfg(test)]
