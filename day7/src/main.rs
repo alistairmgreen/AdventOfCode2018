@@ -20,17 +20,27 @@ fn main() {
             .insert(prerequisite);
     }
 
-    let sequence = find_order(steps, prerequisites);
+    println!("Part 1:");
+
+    let sequence = find_order(steps.clone(), prerequisites.clone());
 
     println!("The steps must be performed in order:\n{}", sequence);
+
+    println!("Part 2:");
+    let time_required = parallel_construction(steps, prerequisites, 5, time_for_step);
+    println!("Five workers can assemble the sleigh in {} seconds.", time_required);
 }
 
 fn find_order(mut steps: HashSet<char>, mut prerequisites: HashMap<char, HashSet<char>>) -> String {
-    let mut sequence = String::with_capacity(steps.len());
+    let step_count = steps.len();
+    let mut sequence = String::with_capacity(step_count);
+    let mut completed_steps = HashSet::with_capacity(step_count);
 
     while !steps.is_empty() {
-        let step = next_step(&steps, &prerequisites);
+        let step = next_step(&steps, &prerequisites, &completed_steps)
+            .expect("Cannot proceed with any of the remaining steps");
         sequence.push(step);
+        completed_steps.insert(step);
         steps.remove(&step);
         prerequisites.remove(&step);
     }
@@ -38,28 +48,82 @@ fn find_order(mut steps: HashSet<char>, mut prerequisites: HashMap<char, HashSet
     sequence
 }
 
-fn next_step(steps: &HashSet<char>, prerequisites: &HashMap<char, HashSet<char>>) -> char {
-    let mut candidates: Vec<char> = steps
+fn next_step(
+    remaining_steps: &HashSet<char>,
+    prerequisites: &HashMap<char, HashSet<char>>,
+    completed_steps: &HashSet<char>,
+) -> Option<char> {
+    let mut candidates: Vec<char> = remaining_steps
         .iter()
         .cloned()
         .filter(|step| match prerequisites.get(step) {
             None => true,
-            Some(required) => !required.iter().any(|r| steps.contains(r)),
+            Some(required) => required.iter().all(|r| completed_steps.contains(r)),
         })
         .collect();
 
-    assert!(!candidates.is_empty());
-
     candidates.sort();
-    candidates[0]
+
+    match candidates.get(0) {
+        Some(&letter) => Some(letter),
+        None => None,
+    }
+}
+
+fn parallel_construction(
+    mut steps: HashSet<char>,
+    mut prerequisites: HashMap<char, HashSet<char>>,
+    num_workers: usize,
+    step_time: impl Fn(char) -> usize,
+) -> usize {
+    let step_count = steps.len();
+    let mut completed_steps: HashSet<char> = HashSet::with_capacity(step_count);
+    let mut seconds = 0;
+    let mut worker_tasks: Vec<Option<char>> = vec![None; num_workers];
+    let mut worker_remaining_time: Vec<usize> = vec![0; num_workers];
+
+    while completed_steps.len() < step_count {
+        // Have any workers finished what they are doing?
+        for n in 0..num_workers {
+            if let Some(step_in_progress) = worker_tasks[n] {
+                worker_remaining_time[n] -= 1;
+                if worker_remaining_time[n] == 0 {
+                    completed_steps.insert(step_in_progress);
+                    worker_tasks[n] = None;
+                }
+            }
+        }
+
+        // If any tasks remain unstarted, allocate them to idle workers.
+
+        if !steps.is_empty() {
+            for n in 0..num_workers {
+                if worker_tasks[n].is_none() {
+                    if let Some(next_task) = next_step(&steps, &prerequisites, &completed_steps) {
+                        worker_tasks[n] = Some(next_task);
+                        worker_remaining_time[n] = step_time(next_task);
+                        steps.remove(&next_task);
+                        prerequisites.remove(&next_task);
+                    }
+                }
+            }
+        }
+
+        seconds += 1;
+    }
+
+    seconds - 1
+}
+
+fn time_for_step(letter: char) -> usize {
+    (letter as u8 - b'A' + 61) as usize
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_find_order() {
+    fn example_input() -> (HashSet<char>, HashMap<char, HashSet<char>>) {
         let mut steps = HashSet::with_capacity(6);
         for step in b'A'..=b'F' {
             steps.insert(step as char);
@@ -89,8 +153,31 @@ mod tests {
         f_prerequisites.insert('C');
         prerequisites.insert('F', f_prerequisites);
 
+        (steps, prerequisites)
+    }
+
+    #[test]
+    fn test_find_order() {
+        let (steps, prerequisites) = example_input();
         let sequence = find_order(steps, prerequisites);
 
         assert_eq!("CABDFE".to_string(), sequence);
+    }
+
+    fn test_step_time(letter: char) -> usize {
+        (letter as u8 - b'A' + 1) as usize
+    }
+
+    #[test]
+    fn test_part2() {
+        let (steps, prerequisites) = example_input();
+        let time = parallel_construction(steps, prerequisites, 2, test_step_time);
+        assert_eq!(15, time);
+    }
+
+    #[test]
+    fn test_time_for_step() {
+        assert_eq!(61, time_for_step('A'));
+        assert_eq!(86, time_for_step('Z'));
     }
 }
