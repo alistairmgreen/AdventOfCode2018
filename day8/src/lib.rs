@@ -24,6 +24,22 @@ impl Node {
                 .sum::<i32>()
     }
 
+    pub fn value(&self) -> i32 {
+        if self.children.is_empty() {
+            self.metadata.iter().sum::<i32>()
+        } else {
+            let mut value = 0;
+            for n in &self.metadata {
+                let index = (n - 1) as usize;
+                if let Some(child) = self.children.get(index) {
+                    value += child.value();
+                }
+            }
+
+            value
+        }
+    }
+
     pub fn read<'a, T: Iterator<Item = &'a i32>>(numbers: &mut T) -> Result<Node, TreeParseError> {
         let num_children = match numbers.next() {
             Some(n) => *n as usize,
@@ -66,12 +82,21 @@ impl Node {
 mod tests {
     use super::*;
 
-    #[test]
-    fn parse_example_nodes() {
-        let numbers: Vec<i32> = vec![2, 3, 0, 3, 10, 11, 12, 1, 1, 0, 1, 99, 2, 1, 1, 2];
-        let mut iterator = numbers.iter();
-        let root = Node::read(&mut iterator).unwrap();
+    fn example_tree() -> Node {
+        let input = vec![2, 3, 0, 3, 10, 11, 12, 1, 1, 0, 1, 99, 2, 1, 1, 2];
+        Node::read(&mut input.iter()).unwrap()
+    }
 
-        assert_eq!(138, root.sum_metadata());
+    #[test]
+    fn example_sum_of_metadata() {
+        let root_node = example_tree();
+
+        assert_eq!(138, root_node.sum_metadata());
+    }
+
+    #[test]
+    fn example_node_value() {
+        let root_node = example_tree();
+        assert_eq!(66, root_node.value());
     }
 }

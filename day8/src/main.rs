@@ -8,9 +8,11 @@ fn main() -> Result<(), TreeParseError> {
         .collect::<Result<Vec<i32>, ParseIntError>>()?;
     
     let mut iterator = input.iter();
-    let tree = Node::read(&mut iterator)?;
+    let root_node = Node::read(&mut iterator)?;
 
-    println!("The sum of all metadata is {}", tree.sum_metadata());
+    println!("The sum of all metadata is {}", root_node.sum_metadata());
+
+    println!("The value of the root node is {}.", root_node.value());
 
     Ok(())
 }
