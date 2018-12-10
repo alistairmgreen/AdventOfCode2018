@@ -1,3 +1,5 @@
+use std::collections::VecDeque;
+
 fn main() {
     let score = high_score(476, 71_431);
     println!("The winning score is {}", score);
@@ -5,14 +7,16 @@ fn main() {
 
 #[derive(Debug)]
 struct MarbleGame {
-    marbles: Vec<usize>,
+    marbles: VecDeque<usize>,
     current_marble: usize,
 }
 
 impl MarbleGame {
     pub fn new() -> MarbleGame {
+        let mut marbles = VecDeque::new();
+        marbles.push_back(0);
         MarbleGame {
-            marbles: vec![0],
+            marbles,
             current_marble: 0,
         }
     }
@@ -63,17 +67,24 @@ mod tests {
             current_marble: 13,
             marbles: vec![
                 0, 16, 8, 17, 4, 18, 9, 19, 2, 20, 10, 21, 5, 22, 11, 1, 12, 6, 13, 3, 14, 7, 15,
-            ],
+            ]
+            .iter()
+            .cloned()
+            .collect(),
         };
+
+        let expected: VecDeque<usize> = vec![
+            0, 16, 8, 17, 4, 18, 19, 2, 20, 10, 21, 5, 22, 11, 1, 12, 6, 13, 3, 14, 7, 15,
+        ]
+        .iter()
+        .cloned()
+        .collect();
 
         assert_eq!(22, game.marbles[game.current_marble]);
 
         let score = game.place_marble(23);
         assert_eq!(32, score);
-        assert_eq!(
-            vec![0, 16, 8, 17, 4, 18, 19, 2, 20, 10, 21, 5, 22, 11, 1, 12, 6, 13, 3, 14, 7, 15],
-            game.marbles
-        );
+        assert_eq!(expected, game.marbles);
         assert_eq!(19, game.marbles[game.current_marble]);
     }
 
