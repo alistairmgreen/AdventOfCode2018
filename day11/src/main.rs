@@ -2,8 +2,13 @@ use std::ops::{Index, IndexMut};
 
 fn main() {
     let grid = compute_power_grid(300, 5535);
-    let (x, y) = find_best_square(&grid);
+    let ((x, y), power) = find_best_square_of_size(3, &grid);
     println!("The 3x3 square with the highest power is {},{}", x, y);
+    println!("(Power = {})\n", power);
+
+    let ((x, y), square_size) = find_best_square_any_size(&grid);
+
+    println!("Best square of any size: x,y,size = {},{},{}", x, y, square_size);
 }
 
 fn hundreds(x: i32) -> i32 {
@@ -57,15 +62,15 @@ fn compute_power_grid(dimension: usize, serial: i32) -> Grid<i32> {
     grid
 }
 
-fn find_best_square(grid: &Grid<i32>) -> (usize, usize) {
+fn find_best_square_of_size(square_size: usize, grid: &Grid<i32>) -> ((usize, usize), i32) {
     let dimension = grid.rank - 1;
-    let last = dimension - 3;
+    let last = dimension - square_size;
     let mut best_coordinate = (0, 0);
     let mut best_power = 0;
 
     for x in 1..=last {
         for y in 1..=last {
-            let power = total_power_3x3(x, y, &grid);
+            let power = total_power(x, y, square_size, &grid);
             if power > best_power {
                 best_power = power;
                 best_coordinate = (x, y);
@@ -73,14 +78,41 @@ fn find_best_square(grid: &Grid<i32>) -> (usize, usize) {
         }
     }
 
-    best_coordinate
+    (best_coordinate, best_power)
 }
 
-fn total_power_3x3(x: usize, y: usize, grid: &Grid<i32>) -> i32 {
+fn find_best_square_any_size(grid: &Grid<i32>) -> ((usize, usize), usize) {
+    let mut best_coordinate = (0, 0);
+    let mut best_power = 0;
+    let mut best_square_size = 0;
+
+    for square_size in (1..grid.rank).rev() {
+        println!("Trying square size {}", square_size);
+        // Each cell can have a maximum value of 4.
+        // If best power found > 4 x square_size^2, then there is no point
+        // in trying any smaller sizes.
+
+        if best_power > (4 * square_size * square_size) as i32 {
+            break;
+        }
+
+        let (coordinate, power) = find_best_square_of_size(square_size, &grid);
+
+        if power > best_power {
+            best_coordinate = coordinate;
+            best_power = power;
+            best_square_size = square_size;
+        }
+    }
+
+    (best_coordinate, best_square_size)
+}
+
+fn total_power(x: usize, y: usize, square_size: usize, grid: &Grid<i32>) -> i32 {
     let mut power = 0;
-    for x_offset in 0..=2 {
+    for x_offset in 0..square_size {
         let column = &grid[x + x_offset];
-        for y_offset in 0..=2 {
+        for y_offset in 0..square_size {
             power += column[y + y_offset];
         }
     }
@@ -116,12 +148,24 @@ mod tests {
     #[test]
     fn part1_example1() {
         let grid = compute_power_grid(300, 18);
-        assert_eq!((33, 45), find_best_square(&grid));
+        assert_eq!(((33, 45), 29), find_best_square_of_size(3, &grid));
     }
 
     #[test]
     fn part1_example2() {
         let grid = compute_power_grid(300, 42);
-        assert_eq!((21, 61), find_best_square(&grid));
+        assert_eq!(((21, 61), 30), find_best_square_of_size(3, &grid));
+    }
+
+    #[test]
+    fn part2_example1() {
+        let grid = compute_power_grid(300, 18);
+        assert_eq!(((90, 269), 16), find_best_square_any_size(&grid));
+    }
+
+    #[test]
+    fn part2_example2() {
+        let grid = compute_power_grid(300, 42);
+        assert_eq!(((232, 251), 12), find_best_square_any_size(&grid));
     }
 }
