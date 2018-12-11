@@ -1,22 +1,24 @@
-use std::collections::VecDeque;
+mod collections;
+use crate::collections::CircularList;
 
 fn main() {
     let score = high_score(476, 71_431);
-    println!("The winning score is {}", score);
+    println!("The winning score with 71,431 turns is {}", score);
+
+    let score = high_score(476, 7_143_100);
+    println!("The winning score with 7,143,100 turns is {}", score);
 }
 
 #[derive(Debug)]
 struct MarbleGame {
-    marbles: VecDeque<usize>,
+    marbles: CircularList,
     current_marble: usize,
 }
 
 impl MarbleGame {
-    pub fn new() -> MarbleGame {
-        let mut marbles = VecDeque::new();
-        marbles.push_back(0);
+    pub fn with_capacity(marble_count: usize) -> MarbleGame {
         MarbleGame {
-            marbles,
+            marbles: CircularList::with_capacity(marble_count + 1),
             current_marble: 0,
         }
     }
@@ -24,20 +26,31 @@ impl MarbleGame {
     /// Places a marble in the circle and returns the resulting score.
     pub fn place_marble(&mut self, number: usize) -> usize {
         if number % 23 == 0 {
-            let index_to_remove = if self.current_marble >= 7 {
-                self.current_marble - 7
-            } else {
-                (self.current_marble as i32 - 7 + self.marbles.len() as i32) as usize
-            };
-            let removed_marble = self.marbles[index_to_remove];
-            self.marbles.remove(index_to_remove);
-            self.current_marble = index_to_remove % self.marbles.len();
+            let mut removed_marble = self
+                .marbles
+                .left_of(self.current_marble)
+                .expect("Marble 1 place to left does not exist");
+            for n in 2..=7 {
+                removed_marble = self
+                    .marbles
+                    .left_of(removed_marble)
+                    .unwrap_or_else(|| panic!("Marble {} places to left does not exist", n));
+            }
+
+            self.current_marble = self
+                .marbles
+                .right_of(removed_marble)
+                .expect("Next current marble does not exist");
+            self.marbles.remove(removed_marble);
 
             number + removed_marble
         } else {
-            let next_index = (self.current_marble + 2) % self.marbles.len();
-            self.marbles.insert(next_index, number);
-            self.current_marble = next_index;
+            let marble_to_right = self
+                .marbles
+                .right_of(self.current_marble)
+                .expect("Marble to right of current does not exist");
+            self.marbles.insert_after(marble_to_right, number);
+            self.current_marble = number;
 
             0
         }
@@ -46,7 +59,7 @@ impl MarbleGame {
 
 fn high_score(players: usize, last_marble: usize) -> usize {
     let mut scores = vec![0; players];
-    let mut game = MarbleGame::new();
+    let mut game = MarbleGame::with_capacity(last_marble);
     let mut player: usize = 0;
 
     for n in 1..=last_marble {
@@ -60,33 +73,6 @@ fn high_score(players: usize, last_marble: usize) -> usize {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn place_23rd_marble() {
-        let mut game = MarbleGame {
-            current_marble: 13,
-            marbles: vec![
-                0, 16, 8, 17, 4, 18, 9, 19, 2, 20, 10, 21, 5, 22, 11, 1, 12, 6, 13, 3, 14, 7, 15,
-            ]
-            .iter()
-            .cloned()
-            .collect(),
-        };
-
-        let expected: VecDeque<usize> = vec![
-            0, 16, 8, 17, 4, 18, 19, 2, 20, 10, 21, 5, 22, 11, 1, 12, 6, 13, 3, 14, 7, 15,
-        ]
-        .iter()
-        .cloned()
-        .collect();
-
-        assert_eq!(22, game.marbles[game.current_marble]);
-
-        let score = game.place_marble(23);
-        assert_eq!(32, score);
-        assert_eq!(expected, game.marbles);
-        assert_eq!(19, game.marbles[game.current_marble]);
-    }
 
     #[test]
     fn nine_player_high_score() {
