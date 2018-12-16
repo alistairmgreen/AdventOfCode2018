@@ -7,6 +7,12 @@ fn main() {
         "The scores of the next ten recipes are: {}",
         next_ten_scores
     );
+
+    let part2_solution = part2(&[9, 9, 0, 9, 4, 1]);
+    println!(
+        "{} recipes appear to the left of the sequence 990941.",
+        part2_solution
+    );
 }
 
 fn create_new_recipes(recipes: &mut Vec<u8>, current_a: usize, current_b: usize) {
@@ -21,16 +27,15 @@ fn create_new_recipes(recipes: &mut Vec<u8>, current_a: usize, current_b: usize)
     }
 }
 
-fn generate_recipes(improve_after: usize) -> Vec<u8> {
-    let mut recipes: Vec<u8> = Vec::with_capacity(improve_after + 11);
+fn generate_recipes_until(end_condition: impl Fn(&[u8]) -> bool) -> Vec<u8> {
+    let mut recipes = Vec::new();
     recipes.push(3);
     recipes.push(7);
 
     let mut elf_a = 0;
     let mut elf_b = 1;
 
-    let required_recipes = improve_after + 10;
-    while recipes.len() < required_recipes {
+    while !end_condition(&recipes) {
         create_new_recipes(&mut recipes, elf_a, elf_b);
 
         let recipe_count = recipes.len();
@@ -52,8 +57,33 @@ fn scores(recipes: &[u8], improve_after: usize) -> String {
 }
 
 fn part1(improve_after: usize) -> String {
-    let recipes = generate_recipes(improve_after);
+    let recipes = generate_recipes_until(|recipes| recipes.len() >= improve_after + 10);
     scores(&recipes, improve_after)
+}
+
+fn part2(sought_recipes: &[u8]) -> usize {
+    let length_of_sought = sought_recipes.len();
+    let recipes = generate_recipes_until(|recipes| {
+        let recipe_length = recipes.len();
+
+        if recipe_length == length_of_sought {
+            recipes == sought_recipes
+        } else if recipe_length > length_of_sought {
+            recipes[(recipe_length - length_of_sought)..] == *sought_recipes
+                || recipes[(recipe_length - length_of_sought - 1)..recipe_length - 1]
+                    == *sought_recipes
+        } else {
+            false
+        }
+    });
+
+    // There may or may not be exactly one recipe beyond the ones we are looking for.
+    let recipe_length = recipes.len();
+    if recipes[(recipe_length - length_of_sought)..] == *sought_recipes {
+        recipe_length - length_of_sought
+    } else {
+        recipe_length - length_of_sought - 1
+    }
 }
 
 #[cfg(test)]
@@ -68,8 +98,8 @@ mod tests {
     }
 
     #[test]
-    fn test_generate_recipes() {
-        let recipes = generate_recipes(9);
+    fn test_generate_recipes_until() {
+        let recipes = generate_recipes_until(|recipes| recipes.len() >= 19);
         let expected = vec![3, 7, 1, 0, 1, 0, 1, 2, 4, 5, 1, 5, 8, 9, 1, 6, 7, 7, 9];
         assert_eq!(expected, recipes);
     }
@@ -80,5 +110,16 @@ mod tests {
         assert_eq!("0124515891".to_string(), part1(5));
         assert_eq!("9251071085".to_string(), part1(18));
         assert_eq!("5941429882".to_string(), part1(2018));
+    }
+
+    #[test]
+    fn test_part2_examples() {
+        assert_eq!(9, part2(&[5, 1, 5, 8, 9]));
+        assert_eq!(9, part2(&[5, 1, 5, 8, 9, 1, 6, 7, 7, 9]));
+        assert_eq!(5, part2(&[0, 1, 2, 4, 5]));
+        assert_eq!(18, part2(&[9, 2, 5, 1, 0]));
+        assert_eq!(2018, part2(&[5, 9, 4, 1, 4]));
+        assert_eq!(2, part2(&[1]));
+        assert_eq!(2, part2(&[1, 0]));
     }
 }
