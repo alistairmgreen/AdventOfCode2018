@@ -1,7 +1,7 @@
 use std::{fmt, ops::{Index, IndexMut}};
 
 /// A two-dimensional array.
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Matrix<T> {
     width: usize,
     elements: Vec<T>,

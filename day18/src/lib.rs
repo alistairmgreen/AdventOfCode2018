@@ -2,7 +2,7 @@ mod matrix;
 pub use crate::matrix::Matrix;
 use std::{fmt, mem::replace};
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
 pub enum Acre {
     Open,
     Trees,
@@ -77,7 +77,7 @@ fn count_neighbours(grid: &Matrix<Acre>, row: usize, column: usize) -> Counts {
     Counts { trees, lumberyards }
 }
 
-fn next_generation(grid: &Matrix<Acre>) -> Matrix<Acre> {
+pub fn next_generation(grid: &Matrix<Acre>) -> Matrix<Acre> {
     grid.map(|row, column, value| {
         let neighbours = count_neighbours(grid, row, column);
 
