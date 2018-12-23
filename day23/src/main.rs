@@ -17,6 +17,13 @@ fn main() -> Result<(), Error> {
         .count();
 
     println!("{} nanobots are in range.", in_range);
+    
+    let most_in_range = nanobots.iter()
+        .map(|bot| nanobots.iter().filter(|bot2| bot.manhattan_distance(bot2) <= bot.radius).count())
+        .max()
+        .unwrap();
+
+    println!("A bot exists within range of {} other bots.", most_in_range);
 
     Ok(())
 }
